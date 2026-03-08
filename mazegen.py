@@ -23,18 +23,19 @@ class MazeGenerator:
         if entry == exit:
             raise ValueError("Entry and exit points cannot be the same.")
 
-        if entry[0] < 0 or entry[0] >= width or entry[1] < 0 or entry[1] >= height:
+        if not (0 <= entry[0] < width and 0 <= entry[1] < height):
             raise ValueError("Entry point is out of maze bounds.")
 
-        if exit[0] < 0 or exit[0] >= width or exit[1] < 0 or exit[1] >= height:
+        if not (0 <= exit[0] < width and 0 <= exit[1] < height):
             raise ValueError("Exit point is out of maze bounds.")
 
-        self.min_width = 7
-        self.min_height = 5
+        self.min_width = 8
+        self.min_height = 6
         if self.width < self.min_width or self.height < self.min_height:
-            raise ValueError("Maze must be at least 7x5 to draw '42'")
+            raise ValueError("Maze must be at least 8x6 to draw '42'"
+                             "(and guarantee entry/exit paths).")
 
-    def forty_two_cells(self) -> set[tuple[int, int]]:
+    def _forty_two_cells(self) -> set[tuple[int, int]]:
         """Reserve cells needed to draw '42'"""
 
         # Cells needed to draw '42'
@@ -50,38 +51,31 @@ class MazeGenerator:
             reserved.add((x + start_x, y + start_y))
         for x, y in TWO:
             reserved.add((x + start_x + 4, y + start_y))
+        if self.entry in reserved or self.exit in reserved:
+            raise ValueError("Entry and exit points cannot be on '42' cells.")
         return reserved
 
-    def create_grid(self) -> List[List[dict]]:
+    def _create_grid(self) -> List[List[dict]]:
         """Initialize maze grid with all walls closed (True)."""
         maze = []
-
-        x_index = 0
-        while x_index < self.height:
-            x = []
-            y_index = 0
-            while y_index < self.width:
-                cell = {"up": True, "right": True, "down": True, "left": True}
-                x.append(cell)
-                y_index += 1
-            maze.append(x)
-            x_index += 1
+        for _ in range(self.height):
+            maze.append([{"up": True, "right": True, "down": True,
+                          "left": True} for _ in range(self.width)])
         return maze
 
     def generate(self) -> None:
         """Generate the maze using recursive
-            backtracking, skipping reserved cells
-                and keeping track of solution path."""
+            backtracking, skipping reserved cells."""
         if self.seed is not None:
             random.seed(self.seed)  # Set seed for reproducibility
-        self.maze = self.create_grid()
-        self.reserved_cells = self.forty_two_cells()
+        self.maze = self._create_grid()
+        self.reserved_cells = self._forty_two_cells()
         # Walls to remove in each direction
         directions = [
-                    {"dx": 0, "dy": -1, "current": "up",  "opposite": "down"},
-                    {"dx": 1, "dy": 0,  "current": "right", "opposite": "left"},
-                    {"dx": 0, "dy": 1,  "current": "down",  "opposite": "up"},
-                    {"dx": -1, "dy": 0, "current": "left",  "opposite": "right"},
+                {"dx": 0, "dy": -1, "wall": "up",  "op_wall": "down"},
+                {"dx": 1, "dy": 0,  "wall": "right", "op_wall": "left"},
+                {"dx": 0, "dy": 1,  "wall": "down",  "op_wall": "up"},
+                {"dx": -1, "dy": 0, "wall": "left",  "op_wall": "right"},
                      ]
         visited = []
         # Mark all cells as unvisited
@@ -91,26 +85,31 @@ class MazeGenerator:
         for x, y in self.reserved_cells:
             visited[y][x] = True
 
-        def explore(x: int, y: int, path: list[str]) -> None:
+        def explore(x: int, y: int) -> None:
             """Recursively explore and build paths from the current cell."""
             visited[y][x] = True
-            # If we reach the exit, save the solution path
-            if (x, y) == self.exit and self.solution is None:
-                self.solution = path.copy()
             random.shuffle(directions)
             for direction in directions:
                 neighbor_x = x + direction["dx"]
                 neighbor_y = y + direction["dy"]
-                if (neighbor_x < 0 or neighbor_x >= self.width or
-                        neighbor_y < 0 or neighbor_y >= self.height):
+                if not (0 <= neighbor_x < self.width and
+                        0 <= neighbor_y < self.height):
                     continue
                 if visited[neighbor_y][neighbor_x]:
                     continue
                 # Remove walls between current and next cell
-                self.maze[y][x][direction["current"]] = False
-                self.maze[neighbor_y][neighbor_x][direction["opposite"]] = False
-                # Add direction to path and explore next cell
-                new_path = path + [direction["current"]]
-                explore(neighbor_x, neighbor_y, new_path)
+                self.maze[y][x][direction["wall"]] = False
+                self.maze[neighbor_y][neighbor_x][direction["op_wall"]] = False
+                explore(neighbor_x, neighbor_y)
         # Start exploration from the entry point
-        explore(self.entry[0], self.entry[1], [])
+        explore(self.entry[0], self.entry[1])
+
+    def solve(self) -> None:
+        """Compute the solution path from entry to exit using BFS."""
+        # Implement BFS to find the shortest path from entry to exit
+        pass
+
+    def render_ascii(self, show_solution: bool = False) -> str:
+        """Return an ASCII representation of the maze."""
+        # Implement ASCII rendering of the maze, optionally showing the solution path
+        pass
