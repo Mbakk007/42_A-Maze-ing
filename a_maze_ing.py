@@ -42,7 +42,7 @@ def main():
         entry = parse_tuple(config['ENTRY'])
         exit = parse_tuple(config['EXIT'])
         # output_file = config['OUTPUT_FILE']
-        perfect = config['PERFECT'] if config['PERFECT'] else True
+        perfect = config['PERFECT']
         seed = int(config['SEED']) if config['SEED'] else None
     except Exception as error:
         print(f"Invalid configuration values: {error}")
@@ -65,7 +65,7 @@ def main():
         if choice == '1':
             print(maze.render_ascii())
         elif choice == '2':
-            maze.solve()
+            maze.render_ascii() = not maze.render_ascii()
         elif choice == '3':
             # placeholder for changing wall color
             pass

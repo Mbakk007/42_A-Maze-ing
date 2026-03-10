@@ -109,14 +109,15 @@ class MazeGenerator:
         explore(self.entry[0], self.entry[1])
         # if perfect == False, remove 5 random walls
         if not self.perfect:
-            for _ in range(5):
+            for _ in range(10):
                 x = random.randrange(self.width - 1)
                 y = random.randrange(self.height)
                 if ((x, y) in self.reserved_cells or
                    (x + 1, y) in self.reserved_cells):
                     continue
-                self.maze[y][x]["right"] = False
-                self.maze[y][x + 1]["left"] = False
+                if self.maze[y][x]["right"]:
+                    self.maze[y][x]["right"] = False
+                    self.maze[y][x + 1]["left"] = False
 
     def solve(self) -> None:
         """Compute the solution path from entry to exit using BFS."""
@@ -167,33 +168,40 @@ class MazeGenerator:
         # If the loop finishes and we never found the exit
         self.solution = []
 
-    def render_ascii(self, show_solution: bool = False) -> str:
+    def render_ascii(self, show_solution: bool = True) -> str:
         """Return an ASCII representation of the maze."""
-        maze = "+" + "---+" * self.width + "\n"
+        maze = "|" + "---|" * self.width + "\n"
 
         for y in range(self.height):
             middle_line = "|"
-            bottom_line = "+"
+            bottom_line = "|"
 
             for x in range(self.width):
                 cell = "   "
+
                 if (x, y) == self.entry:
                     cell = " S "
                 elif (x, y) == self.exit:
                     cell = " E "
-                elif show_solution:
+                elif show_solution and hasattr(self, "solution") and (x, y) in self.solution:
                     cell = " * "
-
+                elif (x, y) in self.reserved_cells:
+                    cell = " X "
                 middle_line += cell
-                if self.maze[y][x]["right"] is True:
+
+                # Right wall
+                if self.maze[y][x]["right"]:
                     middle_line += "|"
                 else:
                     middle_line += " "
 
-                if self.maze[y][x]["down"] is True:
-                    bottom_line += "---+"
+                # Bottom wall
+                if self.maze[y][x]["down"]:
+                    bottom_line += "---|"
                 else:
-                    bottom_line += "   +"
+                    bottom_line += "   |"
+
             maze += middle_line + "\n"
             maze += bottom_line + "\n"
+
         return maze
