@@ -42,7 +42,7 @@ def main():
         entry = parse_tuple(config['ENTRY'])
         exit = parse_tuple(config['EXIT'])
         # output_file = config['OUTPUT_FILE']
-        perfect = config['PERFECT'] == 'True'
+        perfect = config['PERFECT'] if config['PERFECT'] else True
         seed = int(config['SEED']) if config['SEED'] else None
     except Exception as error:
         print(f"Invalid configuration values: {error}")
@@ -50,7 +50,7 @@ def main():
 
     maze = MazeGenerator(width, height, entry, exit, perfect, seed)
     maze.generate()
-    # mazegenerator.solution
+    maze.solve()
     # mazegenerator.write to output file
 
     while True:
@@ -63,11 +63,9 @@ def main():
 
         choice = input("Enter your choice: ")
         if choice == '1':
-            # placeholder for displaying maze in ASCII
-            pass
+            print(maze.render_ascii())
         elif choice == '2':
-            # placeholder for toggling solution path
-            pass
+            maze.solve()
         elif choice == '3':
             # placeholder for changing wall color
             pass
