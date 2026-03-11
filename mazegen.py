@@ -107,17 +107,47 @@ class MazeGenerator:
                 explore(neighbor_x, neighbor_y)
         # Start exploration from the entry point
         explore(self.entry[0], self.entry[1])
-        # if perfect == False, remove 5 random walls
+        # check if there is any remaining fully closed cell.
+        for y in range(self.height):
+            for x in range(self.width):
+                if (self.maze[y][x]["up"] and self.maze[y][x]["right"]
+                   and self.maze[y][x]["down"] and self.maze[y][x]["left"]):
+                    if (x, y) not in self.reserved_cells:
+                        if (x < self.width - 1 and
+                           (x + 1, y) not in self.reserved_cells):
+                            self.maze[y][x]["right"] = False
+                            self.maze[y][x + 1]["left"] = False
+                        elif (y < self.height - 1 and
+                              (x, y + 1) not in self.reserved_cells):
+                            self.maze[y][x]["down"] = False
+                            self.maze[y + 1][x]["up"] = False
+        # if perfect == False, remove 10 random walls
         if not self.perfect:
-            for _ in range(10):
-                x = random.randrange(self.width - 1)
+            removed = 0
+
+            while removed < 10:
+                x = random.randrange(self.width)
                 y = random.randrange(self.height)
-                if ((x, y) in self.reserved_cells or
-                   (x + 1, y) in self.reserved_cells):
+
+                direction = random.choice(self.directions)
+
+                nx = x + direction["dx"]
+                ny = y + direction["dy"]
+
+                # check bounds
+                if not (0 <= nx < self.width and 0 <= ny < self.height):
                     continue
-                if self.maze[y][x]["right"]:
-                    self.maze[y][x]["right"] = False
-                    self.maze[y][x + 1]["left"] = False
+
+                # skip reserved cells
+                if ((x, y) in self.reserved_cells or
+                   (nx, ny) in self.reserved_cells):
+                    continue
+
+                # remove wall if it exists
+                if self.maze[y][x][direction["wall"]]:
+                    self.maze[y][x][direction["wall"]] = False
+                    self.maze[ny][nx][direction["op_wall"]] = False
+                    removed += 1
 
     def solve(self) -> None:
         """Compute the solution path from entry to exit using BFS."""
@@ -168,13 +198,15 @@ class MazeGenerator:
         # If the loop finishes and we never found the exit
         self.solution = []
 
-    def render_ascii(self, show_solution: bool = True) -> str:
+    def render_ascii(self, show_solution: bool = False,
+                     wall_color: str = "\033[37m",
+                     reserved_color: str = "\033[34m") -> str:
         """Return an ASCII representation of the maze."""
-        maze = "|" + "---|" * self.width + "\n"
+        maze = wall_color + "█" + "████" * self.width + "\n"
 
         for y in range(self.height):
-            middle_line = "|"
-            bottom_line = "|"
+            middle_line = wall_color + "█" + "\033[0m"
+            bottom_line = wall_color + "█" + "\033[0m"
 
             for x in range(self.width):
                 cell = "   "
@@ -183,24 +215,24 @@ class MazeGenerator:
                     cell = " S "
                 elif (x, y) == self.exit:
                     cell = " E "
-                elif show_solution and hasattr(self, "solution") and (x, y) in self.solution:
-                    cell = " * "
+                elif show_solution and (x, y) in self.solution:
+                    cell = "\033[31m" + " ֎ " + "\033[0m"
                 elif (x, y) in self.reserved_cells:
-                    cell = " X "
+                    cell = reserved_color + "███" + "\033[0m"
                 middle_line += cell
 
                 # Right wall
                 if self.maze[y][x]["right"]:
-                    middle_line += "|"
+                    middle_line += wall_color + "█" + "\033[0m"
                 else:
                     middle_line += " "
 
                 # Bottom wall
                 if self.maze[y][x]["down"]:
-                    bottom_line += "---|"
+                    bottom_line += wall_color + "███" + "\033[0m"
                 else:
-                    bottom_line += "   |"
-
+                    bottom_line += "   "
+                bottom_line += wall_color + "█" + "\033[0m"
             maze += middle_line + "\n"
             maze += bottom_line + "\n"
 
