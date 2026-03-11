@@ -4,6 +4,8 @@ from typing import List, Tuple, Optional
 import random
 import sys
 
+__version__ = "1.0.0"
+
 
 class MazeGenerator:
     """Class to generate mazes, compute solutions,
@@ -11,7 +13,8 @@ class MazeGenerator:
 
     def __init__(self, width: int, height: int,
                  entry: Tuple[int, int], exit: Tuple[int, int],
-                 perfect: Optional[bool], seed: Optional[int]) -> None:
+                 perfect: Optional[bool], seed: Optional[int],
+                 output: Optional[str]) -> None:
         self.width: int = width
         self.height: int = height
         self.entry: Tuple[int, int] = entry
@@ -19,7 +22,9 @@ class MazeGenerator:
         self.perfect: Optional[bool] = perfect
         self.seed: Optional[int] = seed
         self.maze: List[List[dict]] = []
+        self.output: str = output
         self.solution = None
+        self.reserved_cells: set = set()
         self.directions = [
                 {"dx": 0, "dy": -1, "wall": "up",  "op_wall": "down"},
                 {"dx": 1, "dy": 0,  "wall": "right", "op_wall": "left"},
@@ -215,7 +220,8 @@ class MazeGenerator:
                     cell = " S "
                 elif (x, y) == self.exit:
                     cell = " E "
-                elif show_solution and (x, y) in self.solution:
+                elif (show_solution and self.solution
+                      and (x, y) in self.solution):
                     cell = "\033[31m" + " ֎ " + "\033[0m"
                 elif (x, y) in self.reserved_cells:
                     cell = reserved_color + "███" + "\033[0m"
@@ -237,3 +243,46 @@ class MazeGenerator:
             maze += bottom_line + "\n"
 
         return maze
+
+    def save_to_file(self, output) -> None:
+        def encode_cell(cell: dict) -> str:
+            value = 0
+            if cell["up"]:
+                value |= 1
+            if cell["right"]:
+                value |= 2
+            if cell["down"]:
+                value |= 4
+            if cell["left"]:
+                value |= 8
+            return format(value, 'X')
+
+        def path_to_directions(solution: List[Tuple[int, int]]) -> str:
+            directions = []
+            for i in range(len(solution) - 1):
+                x1, y1 = solution[i]
+                x2, y2 = solution[i + 1]
+                dx = x2 - x1
+                dy = y2 - y1
+                if dx == 0 and dy == -1:
+                    directions.append("N")
+                elif dx == 1 and dy == 0:
+                    directions.append("E")
+                elif dx == 0 and dy == 1:
+                    directions.append("S")
+                elif dx == -1 and dy == 0:
+                    directions.append("W")
+            return "".join(directions)
+        with open(output, 'w') as f:
+            for row in self.maze:
+                line = "".join(encode_cell(cell) for cell in row)
+                f.write(line + "\n")
+            f.write("\n")
+
+            f.write(f"{self.entry[0]} {self.entry[1]}\n")
+            f.write(f"{self.exit[0]} {self.exit[1]}\n")
+
+            if self.solution:
+                f.write(path_to_directions(self.solution) + "\n")
+            else:
+                f.write("\n")

@@ -1,5 +1,5 @@
-WIDTH=abc
+WIDTH=18
 HEIGHT=18
 ENTRY=0,0
 EXIT=17,17
-OUTPUT_FILE=output_maze.txt
+OUTPUT_FILE=output_m.txt

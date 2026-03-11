@@ -1,0 +1,12 @@
+[build-system]
+requires = ["flit_core >=3.11,<4"]
+build-backend = "flit_core.buildapi"
+
+[project]
+name = "mazegen-amazeing"
+authors = [{name = "ael-bakk", email = "ael-bakk@student.42malaga.com"},
+           {name = "jmoya-fe", email = "jmoya-fe@student.42malaga.com"}]
+dynamic = ["version", "description"]
+
+[tool.flit.module]
+name = "mazegen"

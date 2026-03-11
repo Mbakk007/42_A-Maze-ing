@@ -22,9 +22,10 @@ def parser(filename: str) -> Dict[str, str]:
     try:
         with open(filename, 'r') as file:
             for line in file:
+                line = line.strip()
                 if line.startswith('#') or not line:
                     continue
-                key, value = line.strip().lower().split('=', 1)
+                key, value = line.split('=', 1)
                 config[key] = value
     except FileNotFoundError:
         print(f"Error: Configuration file {filename} not found!")
@@ -54,15 +55,16 @@ def main():
         height = int(config['HEIGHT'])
         entry = parse_tuple(config['ENTRY'])
         exit = parse_tuple(config['EXIT'])
-        # output_file = config['OUTPUT_FILE']
+        output_file = config.get('OUTPUT_FILE', 'maze.txt')
         perfect = (config['PERFECT'].strip().upper() == "TRUE" if
                    config.get('PERFECT') else None)
         seed = int(config['SEED']) if config.get('SEED') else None
-        maze = MazeGenerator(width, height, entry, exit, perfect, seed)
+        maze = MazeGenerator(width, height, entry, exit, perfect,
+                             seed, output_file)
     except Exception as error:
         print(f"Invalid configuration values: {error}")
         print("Switching to default values... (10x10)")
-        maze = MazeGenerator(10, 10, (0, 0), (9, 9), None, None)
+        maze = MazeGenerator(10, 10, (0, 0), (9, 9), None, None, output_file)
 
     maze.generate()
     maze.solve()
@@ -70,7 +72,7 @@ def main():
     wall_color = "\033[37m"
     reserved_color = "\033[34m"
     print(maze.render_ascii(show_solution, wall_color, reserved_color))
-    # mazegenerator.write to output file
+    maze.save_to_file(output_file)
 
     while True:
         print("\n=== MAZE INTERACTIVE MENU ===")

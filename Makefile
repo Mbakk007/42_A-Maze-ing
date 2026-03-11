@@ -1,7 +1,6 @@
 # File: Makefile
 
 install:
-	install:
 	pip install --upgrade pip
 	pip install flake8 mypy
 	@echo "Dependencies installed: flake8, mypy"
