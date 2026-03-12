@@ -1,4 +1,64 @@
-"""MazeGenerator module for a_maze_ing"""
+"""MazeGenerator module for a_maze_ing
+
+This module provides the MazeGenerator class, which allows you to generate
+mazes of customizable size, solve them, render them as ASCII, and save
+them to a file.
+
+Basic Usage Example::
+
+    from MazeGenerator import MazeGenerator
+
+    # Instantiate the generator with a 10x10 maze,
+    gen = MazeGenerator(
+        width=10,
+        height=10,
+        entry=(0, 0),
+        exit=(9, 9),
+        perfect=True,
+        seed=42,
+        output="maze.txt"
+    )
+
+    # Generate the maze
+    gen.generate()
+
+    # Solve the maze
+    gen.solve()
+
+    # Print the ASCII representation with the solution path
+    print(gen.render_ascii(show_solution=True))
+
+    # Save the maze and solution to a file
+    gen.save_to_file("maze.txt")
+
+Accessing the Maze Structure:
+
+    After calling gen.generate(), the maze is stored in gen.maze, which is a
+    2D list of dictionaries:
+
+    gen.maze[y][x] -> {"up": bool, "right": bool, "down": bool, "left": bool}
+
+    Each boolean indicates whether a wall is present in that direction.
+
+Accessing the Solution:
+
+    After calling gen.solve(), the solution is stored in gen.solution as a
+    list of (x, y) tuples representing the path from entry to exit.
+
+        gen.solution  ->  [(x0, y0), (x1, y1), ..., (xN, yN)]
+
+    Example::
+
+        gen.generate()
+        gen.solve()
+
+        if gen.solution:
+            print("Solution path:", gen.solution)
+        else:
+            print("No solution found.")
+
+Use save_to_file() to get the maze and solution in a text file.
+"""
 
 from typing import List, Tuple, Optional, Dict, Set, cast
 import random
@@ -8,8 +68,12 @@ __version__ = "1.0.0"
 
 
 class MazeGenerator:
-    """Class to generate mazes, compute solutions,
-        and provide ASCII representations."""
+    """Generate mazes, compute solutions, write to output files,
+                                            and provide ASCII representations.
+
+    The maze is built using a recursive backtracking algorithm starting from
+    the entry point. Cells belonging to the '42' pattern (if the maze is large
+    enough) are reserved and excluded from path carving."""
 
     def __init__(self, width: int, height: int,
                  entry: Tuple[int, int], exit: Tuple[int, int],
@@ -76,7 +140,7 @@ class MazeGenerator:
         """Generate the maze using recursive
             backtracking, skipping reserved cells."""
         if self.seed is not None:
-            random.seed(self.seed)  # Set seed for reproducibility
+            random.seed(self.seed)
         self.maze = self._create_grid()
         self.reserved_cells = self._forty_two_cells()
         visited = []
@@ -206,13 +270,25 @@ class MazeGenerator:
 
     def render_ascii(self, show_solution: bool = False,
                      wall_color: str = "\033[37m",
-                     reserved_color: str = "\033[34m") -> str:
-        """Return an ASCII representation of the maze."""
-        maze = wall_color + "█" + "████" * self.width + "\n"
+                     reserved_color: str = "\033[34m",
+                     unicode: bool = False) -> str:
+        """Return an ASCII representation of the maze.
+            each cell is 3 by 1 characters.
+            use unicode = True for unicode chars and false for simple ASCII."""
+        if not unicode:
+            edge = "+"
+            horizontal = "-"
+            vertical = "|"
+        else:
+            edge = "█"
+            horizontal = "█"
+            vertical = "█"
+
+        maze = wall_color + edge + (horizontal * 4) * self.width + "\n"
 
         for y in range(self.height):
-            middle_line = wall_color + "█" + "\033[0m"
-            bottom_line = wall_color + "█" + "\033[0m"
+            middle_line = wall_color + vertical + "\033[0m"
+            bottom_line = wall_color + edge + "\033[0m"
 
             for x in range(self.width):
                 cell = "   "
@@ -230,22 +306,26 @@ class MazeGenerator:
 
                 # Right wall
                 if self.maze[y][x]["right"]:
-                    middle_line += wall_color + "█" + "\033[0m"
+                    middle_line += wall_color + vertical + "\033[0m"
                 else:
                     middle_line += " "
 
                 # Bottom wall
                 if self.maze[y][x]["down"]:
-                    bottom_line += wall_color + "███" + "\033[0m"
+                    bottom_line += wall_color + (horizontal * 3) + "\033[0m"
                 else:
                     bottom_line += "   "
-                bottom_line += wall_color + "█" + "\033[0m"
+                bottom_line += wall_color + edge + "\033[0m"
             maze += middle_line + "\n"
             maze += bottom_line + "\n"
 
         return maze
 
     def save_to_file(self, output: str) -> None:
+        """Save the maze grid and solution to a text file.
+
+        Writes the maze in an encoded format, followed by the entry
+        and exit coordinates and the solution path."""
         def encode_cell(cell: Dict[str, bool]) -> str:
             value = 0
             if cell["up"]:
