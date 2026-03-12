@@ -104,6 +104,9 @@ class MazeGenerator:
         if not (0 <= exit[0] < width and 0 <= exit[1] < height):
             raise ValueError("Exit point is out of maze bounds.")
 
+        if (width < 3 or height < 3):
+            raise ValueError("Maze should be at least 4x4")
+
     def _forty_two_cells(self) -> set[tuple[int, int]]:
         """Reserve cells needed to draw '42'"""
 
