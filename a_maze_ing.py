@@ -42,7 +42,7 @@ def parse_tuple(value: str) -> Tuple[int, int]:
     return int(x), int(y)
 
 
-def main():
+def main() -> None:
     if len(sys.argv) != 2:
         print("Usage: python3 a_maze_ing.py config.txt")
         sys.exit(1)
@@ -64,6 +64,7 @@ def main():
     except Exception as error:
         print(f"Invalid configuration values: {error}")
         print("Switching to default values... (10x10)")
+        output_file = config.get('OUTPUT_FILE', 'maze.txt')
         maze = MazeGenerator(10, 10, (0, 0), (9, 9), None, None, output_file)
 
     maze.generate()

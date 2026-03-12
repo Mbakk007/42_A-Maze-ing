@@ -1,6 +1,6 @@
 """MazeGenerator module for a_maze_ing"""
 
-from typing import List, Tuple, Optional
+from typing import List, Tuple, Optional, Dict, Set, cast
 import random
 import sys
 
@@ -21,10 +21,10 @@ class MazeGenerator:
         self.exit: Tuple[int, int] = exit
         self.perfect: Optional[bool] = perfect
         self.seed: Optional[int] = seed
-        self.maze: List[List[dict]] = []
-        self.output: str = output
-        self.solution = None
-        self.reserved_cells: set = set()
+        self.maze: List[List[Dict[str, bool]]] = []
+        self.output: Optional[str] = output
+        self.solution: Optional[List[Tuple[int, int]]] = None
+        self.reserved_cells: Set[Tuple[int, int]] = set()
         self.directions = [
                 {"dx": 0, "dy": -1, "wall": "up",  "op_wall": "down"},
                 {"dx": 1, "dy": 0,  "wall": "right", "op_wall": "left"},
@@ -64,7 +64,7 @@ class MazeGenerator:
             raise ValueError("Entry and exit points cannot be on '42' cells.")
         return reserved
 
-    def _create_grid(self) -> List[List[dict]]:
+    def _create_grid(self) -> List[List[Dict[str, bool]]]:
         """Initialize maze grid with all walls closed (True)."""
         maze = []
         for _ in range(self.height):
@@ -99,16 +99,17 @@ class MazeGenerator:
             visited[y][x] = True
             random.shuffle(self.directions)
             for direction in self.directions:
-                neighbor_x = x + direction["dx"]
-                neighbor_y = y + direction["dy"]
+                neighbor_x = x + cast(int, direction["dx"])
+                neighbor_y = y + cast(int, direction["dy"])
                 if not (0 <= neighbor_x < self.width and
                         0 <= neighbor_y < self.height):
                     continue
                 if visited[neighbor_y][neighbor_x]:
                     continue
                 # Remove walls between current and next cell
-                self.maze[y][x][direction["wall"]] = False
-                self.maze[neighbor_y][neighbor_x][direction["op_wall"]] = False
+                self.maze[y][x][cast(str, direction["wall"])] = False
+                self.maze[neighbor_y][neighbor_x][cast(
+                    str, direction["op_wall"])] = False
                 explore(neighbor_x, neighbor_y)
         # Start exploration from the entry point
         explore(self.entry[0], self.entry[1])
@@ -136,8 +137,8 @@ class MazeGenerator:
 
                 direction = random.choice(self.directions)
 
-                nx = x + direction["dx"]
-                ny = y + direction["dy"]
+                nx = x + cast(int, direction["dx"])
+                ny = y + cast(int, direction["dy"])
 
                 # check bounds
                 if not (0 <= nx < self.width and 0 <= ny < self.height):
@@ -149,9 +150,9 @@ class MazeGenerator:
                     continue
 
                 # remove wall if it exists
-                if self.maze[y][x][direction["wall"]]:
-                    self.maze[y][x][direction["wall"]] = False
-                    self.maze[ny][nx][direction["op_wall"]] = False
+                if self.maze[y][x][cast(str, direction["wall"])]:
+                    self.maze[y][x][cast(str, direction["wall"])] = False
+                    self.maze[ny][nx][cast(str, direction["op_wall"])] = False
                     removed += 1
 
     def solve(self) -> None:
@@ -183,12 +184,12 @@ class MazeGenerator:
 
             # Look at all 4 possible directions
             for direction in self.directions:
-                wall_name = direction["wall"]
+                wall_name = cast(str, direction["wall"])
 
                 # If there is no wall in current direction, move forward
                 if self.maze[current_y][current_x][wall_name] is False:
-                    next_x = current_x + direction["dx"]
-                    next_y = current_y + direction["dy"]
+                    next_x = current_x + cast(int, direction["dx"])
+                    next_y = current_y + cast(int, direction["dy"])
 
                     # mark as visited if not visited yet
                     if (next_x, next_y) not in visited:
@@ -244,8 +245,8 @@ class MazeGenerator:
 
         return maze
 
-    def save_to_file(self, output) -> None:
-        def encode_cell(cell: dict) -> str:
+    def save_to_file(self, output: str) -> None:
+        def encode_cell(cell: Dict[str, bool]) -> str:
             value = 0
             if cell["up"]:
                 value |= 1
